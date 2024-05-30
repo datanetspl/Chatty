@@ -1,20 +1,29 @@
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
 const messageRoutes = require("./routes/messages");
 const app = express();
 const socket = require("socket.io");
+const { DataSource } = require("typeorm");
 require("dotenv").config();
 
 app.use(cors());
 app.use(express.json());
 
-mongoose
-  .connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+const appDataSource = new DataSource({
+  type: process.env.DB_TYPE,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_BASE,
+  entities: ["entities/*.js"],
+  logging: true,
+  synchronize: true,
+});
+
+appDataSource
+  .initialize()
   .then(() => {
     console.log("DB Connetion Successfull");
   })
