@@ -1,5 +1,6 @@
 const db = require("../models");
 const models = db.models;
+const Op = db.Sequelize.Op;
 module.exports.getMessages = async (req, res, next) => {
   try {
     const { from, to } = req.body;
@@ -13,7 +14,7 @@ module.exports.getMessages = async (req, res, next) => {
 
     const projectedMessages = messages.map((msg) => {
       return {
-        fromSelf: msg.senderId === from,
+        fromSelf: parseInt(msg.senderId) === parseInt(from),
         message: msg.text,
       };
     });
