@@ -1,32 +1,72 @@
-const mongoose = require("mongoose");
+module.exports = (sequelize, DataTypes) => {
+  const User = sequelize.define(
+    "User",
+    {
+      id: {
+        autoIncrement: true,
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        primaryKey: true,
+      },
+      username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: {
+          max: {
+            args: [20],
+          },
+          min: {
+            args: [3],
+          }
+        }
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: {
+          max: {
+            args: [50],
+          }
+        }
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          min: {
+            args: [8],
+          }
+        }
+      },
+      isAvatarImageSet: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
+      avatarImage: {
+        type: DataTypes.STRING,
+        defaultValue: ""
+      }
+    },
+    {
+      sequelize,
+      timestamps: true,
+      tableName: "users",
+      schema: 'public'
+    },
+  );
 
-const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    min: 3,
-    max: 20,
-    unique: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    max: 50,
-  },
-  password: {
-    type: String,
-    required: true,
-    min: 8,
-  },
-  isAvatarImageSet: {
-    type: Boolean,
-    default: false,
-  },
-  avatarImage: {
-    type: String,
-    default: "",
-  },
-});
+  User.associate = function(models) {
+    User.hasMany(models.Message, {
+      foreignKey: "senderId",
+      as: "sendedMessages"
+    }),
+    User.hasMany(models.Message, {
+      foreignKey: "receiverId",
+      as: "receivedMessages"
+    })
+  }
 
-module.exports = mongoose.model("Users", userSchema);
+  return User
+};

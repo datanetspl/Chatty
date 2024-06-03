@@ -1,11 +1,13 @@
-const User = require("../models/userModel");
+const db = require("../models");
+const models = db.models;
+const Op = db.Sequelize.Op;
 const bcrypt = require("bcrypt");
 const { use } = require("../routes/auth");
 
 module.exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const user = await models.User.findOne({ where: { username } });
     console.log(password);
     console.log(user.password);
     if (!user)
@@ -15,7 +17,7 @@ module.exports.login = async (req, res, next) => {
       //return res.json({ msg: "Incorrect Username or Password", status: false });
       return res.json({ msg: "Incorrect Username or Password", status: true });
     delete user.password;
-    return res.json({ status: true, user });
+    return res.json({ status: true, user: user.id });
   } catch (ex) {
     next(ex);
   }
@@ -24,14 +26,14 @@ module.exports.login = async (req, res, next) => {
 module.exports.register = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
-    const usernameCheck = await User.findOne({ username });
+    const usernameCheck = await models.User.findOne({ where: { username } });
     if (usernameCheck)
       return res.json({ msg: "Username already used", status: false });
-    const emailCheck = await User.findOne({ email });
+    const emailCheck = await models.User.findOne({ where: { email } });
     if (emailCheck)
       return res.json({ msg: "Email already used", status: false });
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({
+    const user = await models.User.create({
       email,
       username,
       password: hashedPassword,
@@ -45,12 +47,10 @@ module.exports.register = async (req, res, next) => {
 
 module.exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find({ _id: { $ne: req.params.id } }).select([
-      "email",
-      "username",
-      "avatarImage",
-      "_id",
-    ]);
+    const users = await models.User.findAll({ 
+      where: { id: { [Op.ne]: req.params.id }},
+      attributes: ["id", "email", "username", "avatarImage"]
+    });
     return res.json(users);
   } catch (ex) {
     next(ex);
@@ -61,17 +61,20 @@ module.exports.setAvatar = async (req, res, next) => {
   try {
     const userId = req.params.id;
     const avatarImage = req.body.image;
-    const userData = await User.findByIdAndUpdate(
-      userId,
+    await models.User.update(
       {
         isAvatarImageSet: true,
         avatarImage,
       },
-      { new: true }
+      {
+        where: {
+          id: userId
+        }
+      }
     );
     return res.json({
-      isSet: userData.isAvatarImageSet,
-      image: userData.avatarImage,
+      isSet: true,
+      image: avatarImage,
     });
   } catch (ex) {
     next(ex);
