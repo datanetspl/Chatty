@@ -59,7 +59,10 @@ module.exports.getAllUsers = async (req, res, next) => {
 
 module.exports.setAvatar = async (req, res, next) => {
   try {
-    const userId = req.params.id;
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      throw new Error("Route params must parse Int")
+    }
     const avatarImage = req.body.image;
     await models.User.update(
       {
