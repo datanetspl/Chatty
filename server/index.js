@@ -48,13 +48,13 @@ async function init() {
   app.use("/api/messages", messageRoutes);
 
   // handling error
-app.use((req, res, next) => {
+app.use((_req, _res, next) => {
   const error = new Error('not found');
   error['status'] = 404;
   next(error);
 });
 
-app.use((error, req, res, next) => {
+app.use((error, _req, res, _next) => {
   const statusCode = Number(error.status) || 500;
   return res.status(statusCode).json({
     status: 'error',
