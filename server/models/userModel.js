@@ -45,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: false
       },
       avatarImage: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(10485760),
         defaultValue: ""
       }
     },
@@ -57,15 +57,15 @@ module.exports = (sequelize, DataTypes) => {
     },
   );
 
-  User.associate = function(models) {
+  User.associate = function (models) {
     User.hasMany(models.Message, {
       foreignKey: "senderId",
       as: "sendedMessages"
     }),
-    User.hasMany(models.Message, {
-      foreignKey: "receiverId",
-      as: "receivedMessages"
-    })
+      User.hasMany(models.Message, {
+        foreignKey: "receiverId",
+        as: "receivedMessages"
+      })
   }
 
   return User

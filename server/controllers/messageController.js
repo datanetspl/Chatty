@@ -4,7 +4,7 @@ const Op = db.Sequelize.Op;
 module.exports.getMessages = async (req, res, next) => {
   try {
     const { from, to } = req.body;
-
+    console.log(req.body);
     const messages = await models.Message.findAll({
       where: {
         [Op.or]: [{ senderId: from, receiverId: to }, { senderId: to, receiverId: from }]

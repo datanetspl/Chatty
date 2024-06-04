@@ -28,14 +28,14 @@ export default function Chat() {
   useEffect(() => {
     if (currentUser) {
       socket.current = io(host);
-      socket.current.emit("add-user", currentUser._id);
+      socket.current.emit("add-user", currentUser.id);
     }
   }, [currentUser]);
 
   useEffect(async () => {
     if (currentUser) {
       if (currentUser.isAvatarImageSet) {
-        const data = await axios.get(`${allUsersRoute}/${currentUser._id}`);
+        const data = await axios.get(`${allUsersRoute}/${currentUser.id}`);
         setContacts(data.data);
       } else {
         navigate("/setAvatar");

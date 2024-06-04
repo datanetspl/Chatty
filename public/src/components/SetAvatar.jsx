@@ -33,8 +33,8 @@ export default function SetAvatar() {
       const user = await JSON.parse(
         localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
       );
-
-      const { data } = await axios.post(`${setAvatarRoute}/${user._id}`, {
+      console.log(user);
+      const { data } = await axios.post(`${setAvatarRoute}/${user.id}`, {
         image: avatars[selectedAvatar],
       });
 

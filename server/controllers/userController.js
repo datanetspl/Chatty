@@ -46,9 +46,10 @@ module.exports.register = async (req, res, next) => {
 };
 
 module.exports.getAllUsers = async (req, res, next) => {
+  console.log(req.params);
   try {
-    const users = await models.User.findAll({ 
-      where: { id: { [Op.ne]: req.params.id }},
+    const users = await models.User.findAll({
+      where: { id: { [Op.ne]: parseInt(req.params.id) } },
       attributes: ["id", "email", "username", "avatarImage"]
     });
     return res.json(users);
@@ -59,8 +60,13 @@ module.exports.getAllUsers = async (req, res, next) => {
 
 module.exports.setAvatar = async (req, res, next) => {
   try {
-    const userId = req.params.id;
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      throw new Error("Route params must parse Int")
+    }
+    console.log(req.params);
     const avatarImage = req.body.image;
+    console.log(avatarImage);
     await models.User.update(
       {
         isAvatarImageSet: true,
@@ -68,7 +74,7 @@ module.exports.setAvatar = async (req, res, next) => {
       },
       {
         where: {
-          id: userId
+          id: parseInt(userId)
         }
       }
     );

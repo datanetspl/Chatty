@@ -29,7 +29,7 @@ export default function Contacts({ contacts, changeChat }) {
             {contacts.map((contact, index) => {
               return (
                 <div
-                  key={contact._id}
+                  key={contact.id}
                   className={`contact ${index === currentSelected ? "selected" : ""
                     }`}
                   onClick={() => changeCurrentChat(index, contact)}

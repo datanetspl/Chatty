@@ -47,6 +47,22 @@ async function init() {
   app.use("/api/auth", authRoutes);
   app.use("/api/messages", messageRoutes);
 
+  // handling error
+  app.use((req, res, next) => {
+    const error = new Error('not found');
+    error['status'] = 404;
+    next(error);
+  });
+
+  app.use((error, req, res, next) => {
+    const statusCode = Number(error.status) || 500;
+    return res.status(statusCode).json({
+      status: 'error',
+      code: statusCode,
+      message: error.message || 'Internal server error',
+    });
+  });
+
   const server = app.listen(config.app.port, () =>
     console.log(`Server started on ${config.app.port}`)
   );
