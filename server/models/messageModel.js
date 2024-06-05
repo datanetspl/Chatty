@@ -12,22 +12,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      senderId: {
-        type: DataTypes.BIGINT,
-        allowNull: false,
-        references: {
-          model: "users",
-          key: "id",
-        },
-      },
-      receiverId: {
-        type: DataTypes.BIGINT,
-        allowNull: false,
-        references: {
-          model: "users",
-          key: "id",
-        },
-      }
     },
     {
       sequelize,
@@ -42,9 +26,9 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: "senderId",
       as: "sender"
 		});
-    Message.belongsTo(models.User, {
-			foreignKey: "receiverId",
-      as: "receiver"
+    Message.belongsTo(models.Conversation, {
+			foreignKey: "convId",
+      as: "conversation"
 		});
 	};
 

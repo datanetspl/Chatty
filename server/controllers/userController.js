@@ -3,6 +3,7 @@ const models = db.models;
 const Op = db.Sequelize.Op;
 const bcrypt = require("bcrypt");
 const { use } = require("../routes/auth");
+const ErrorResponse = require("../core/errorResponse");
 
 module.exports.login = async (req, res, next) => {
   try {
@@ -61,7 +62,7 @@ module.exports.setAvatar = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
-      throw new Error("Route params must parse Int")
+      throw new ErrorResponse("Route params must parse Int", 400)
     }
     const avatarImage = req.body.image;
     await models.User.update(

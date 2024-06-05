@@ -24,7 +24,7 @@ async function init() {
   console.log(`Starting Express server...`);
 
   // init table
-  db.sequelize.sync()
+  db.sequelize.sync({ force: true })
     .then(() => {
       console.log("Synced db.");
     })
