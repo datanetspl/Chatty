@@ -52,6 +52,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       timestamps: true,
+      defaultScope: {
+        attributes: { exclude: ['password'] },
+      },
       tableName: "users",
       schema: 'public'
     },
@@ -60,7 +63,7 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = function(models) {
     User.belongsToMany(models.Conversation, { 
       through: models.UserConversation,
-      foreignKey: "convId",
+      foreignKey: "userId",
     });
     User.hasMany(models.Message, {
       foreignKey: "senderId",

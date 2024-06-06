@@ -1,9 +1,20 @@
+const ErrorResponse = require("../core/errorResponse");
 const db = require("../models");
 const models = db.models;
 const Op = db.Sequelize.Op;
 module.exports.getMessages = async (req, res, next) => {
   try {
     const { convId } = req.body;
+    const userId = req.headers.userid;
+    const userConversation = await models.UserConversation.findOne({
+      where: {
+        userId,
+        convId
+      }
+    });
+    if (!userConversation) {
+      throw new ErrorResponse("User hasn't been in conversation", 400);
+    }
 
     const messages = await models.Message.findAll({
       where: {
@@ -14,7 +25,7 @@ module.exports.getMessages = async (req, res, next) => {
 
     const projectedMessages = messages.map((msg) => {
       return {
-        fromSelf: parseInt(msg.senderId) === parseInt(req.userId),
+        fromSelf: parseInt(msg.senderId) === parseInt(userId),
         message: msg.text,
       };
     });
@@ -27,21 +38,32 @@ module.exports.getMessages = async (req, res, next) => {
 module.exports.addMessage = async (req, res, next) => {
   try {
     const { convId, message } = req.body;
+    const userId = req.headers.userid;
+    const userConversation = await models.UserConversation.findOne({
+      where: {
+        userId,
+        convId
+      }
+    });
+    if (!userConversation) {
+      throw new ErrorResponse("User hasn't been in conversation", 400);
+    }
     const data = await models.Message.create({
       text: message,
-      senderId: from,
+      senderId: userId,
       convId,
     });
 
-    const conversation = await Conversation.findByPk(convId, {
+    const conversation = await models.Conversation.findByPk(convId, {
       include: models.User,
       as: "Users"
     });
 
     const usersIdInConv = conversation.Users
-                            .filter(user => user.id !== parseInt(req.userId))
+                            .filter(user => user.id !== userId)
                             .map(user => user.id);
-    await db.UserConversation.update({ isRead: false }, {
+
+    await models.UserConversation.update({ isRead: false }, {
       where: {
         convId,
         userId: {

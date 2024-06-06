@@ -10,7 +10,6 @@ module.exports = (sequelize, DataTypes) => {
       },
       type: {
         type: DataTypes.ENUM("single", "group"),
-        allowNull: true,
         defaultValue: "single",
       },
       name: {
@@ -29,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
   Conversation.associate = function (models) {
     Conversation.belongsToMany(models.User, {
       through: models.UserConversation,
-      foreignKey: "userId",
+      foreignKey: "convId",
     });
     Conversation.hasMany(models.Message, {
       foreignKey: "convId",

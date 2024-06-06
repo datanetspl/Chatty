@@ -1,28 +1,40 @@
+const ErrorResponse = require("../core/errorResponse");
 const db = require("../models");
 const models = db.models;
+const Op = db.Sequelize.Op;
 
 module.exports.singleConversation = async (req, res, next) => {
   const { userId2 } = req.body;
   try {
-    let conversation = await Conversation.findAll({
+    const users = await models.User.findAll({
+      where: {
+        id: [parseInt(req.headers.userid), userId2]
+      },
+    });
+    if (users.length < 2) {
+      throw new ErrorResponse("User 2 not found", 400);
+    }
+    let conversation = await models.Conversation.findOne({
+      where: {
+        type: "single",
+      },
       include: [
         {
-          model: User,
-          where: { id: req.userId }
+          model: models.User,
+          where: { id: req.headers.userId }
         },
         {
-          model: User,
+          model: models.User,
           where: { id: userId2 }
         }
       ],
-      having: sequelize.literal('COUNT(DISTINCT `users`.`id`) = 2'),
     });
 
     if (!conversation) {
-      conversation = await sequelize.transaction(async (t) => {
+      conversation = await db.sequelize.transaction(async (t) => {
         const conversation = await models.Conversation.create({}, { transaction: t });
 
-        await conversation.addUsers([req.userId, req.userId2], { transaction: t });
+        await conversation.addUsers(users, { transaction: t });
 
         return conversation;
       });
@@ -30,7 +42,7 @@ module.exports.singleConversation = async (req, res, next) => {
 
     return res.json({
       convId: conversation.id
-    })
+    });
 
   } catch (err) {
     next(err);
@@ -38,26 +50,40 @@ module.exports.singleConversation = async (req, res, next) => {
 };
 
 module.exports.groupConversation = async (req, res, next) => {
-  const { participants } = req.body;
+  let { participants } = req.body;
   try {
-     const conversation = await sequelize.transaction(async (t) => {
-      const participantsName = await Promise.all(participants.map(async (userId) => {
-        const userData = await models.User.findByPk(user);
-        return userData.username
-      }))
+    participants = Array.from(new Set(participants));
+    if (participants.length < 2) {
+      throw new ErrorResponse("Group chat need more than 3 people", 400);
+    }
+    const userId = req.headers.userid
+    const users = await models.User.findAll({
+      where: {
+        id: [userId, ...participants]
+      },
+    })
+
+    if (users.length < participants.length + 1) {
+      throw new ErrorResponse("User not found", 400)
+    }
+    const conversation = await db.sequelize.transaction(async (t) => {
+      const participantsName = await Promise.all(participants.map(async (id) => {
+        const userData = await models.User.findByPk(id);
+        return userData.username;
+      }));
 
       const conversation = await models.Conversation.create({ type: "group", name: participantsName.join(", ") }, { transaction: t });
 
-      await conversation.addUsers([...participants, req.userId], { transaction: t });
+      await conversation.addUsers(users, { transaction: t });
 
       return conversation;
     });
 
     return res.json({
       convId: conversation.id
-    })
+    });
   } catch (err) {
-    next(err)
+    next(err);
   }
 }
 

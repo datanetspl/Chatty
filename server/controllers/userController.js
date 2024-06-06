@@ -39,8 +39,8 @@ module.exports.register = async (req, res, next) => {
       username,
       password: hashedPassword,
     });
-    delete user.password;
-    return res.json({ status: true, user });
+    const { password: userPassword, ...userWithoutPassword } = user.toJSON();
+    return res.json({ status: true, user: userWithoutPassword });
   } catch (ex) {
     next(ex);
   }
