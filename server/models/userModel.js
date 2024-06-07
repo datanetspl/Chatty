@@ -1,3 +1,5 @@
+const bcrypt = require("bcrypt");
+
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
     "User",
@@ -52,24 +54,21 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       timestamps: true,
-      defaultScope: {
-        attributes: { exclude: ['password'] },
-      },
       tableName: "users",
       schema: 'public'
     },
   );
 
-  User.associate = function(models) {
-    User.belongsToMany(models.Conversation, { 
+  User.associate = function (models) {
+    User.belongsToMany(models.Conversation, {
       through: models.UserConversation,
       foreignKey: "userId",
     });
     User.hasMany(models.Message, {
       foreignKey: "senderId",
       as: "sendedMessages"
-    })
+    });
   };
 
-  return User
+  return User;
 };

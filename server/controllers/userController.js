@@ -14,11 +14,14 @@ module.exports.login = async (req, res, next) => {
     if (!user)
       return res.json({ msg: "Incorrect Username or Password", status: false });
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid)
+    if (!isPasswordValid) {
       //return res.json({ msg: "Incorrect Username or Password", status: false });
       return res.json({ msg: "Incorrect Username or Password", status: true });
-    delete user.password;
-    return res.json({ status: true, user: user.id });
+    }
+
+    const { password: userPassword, ...userWithoutPassword } = user.toJSON();
+    
+    return res.json({ status: true, user: userWithoutPassword });
   } catch (ex) {
     next(ex);
   }
@@ -48,8 +51,8 @@ module.exports.register = async (req, res, next) => {
 
 module.exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await models.User.findAll({ 
-      where: { id: { [Op.ne]: req.params.id }},
+    const users = await models.User.findAll({
+      where: { id: { [Op.ne]: req.params.id } },
       attributes: ["id", "email", "username", "avatarImage"]
     });
     return res.json(users);
@@ -62,7 +65,7 @@ module.exports.setAvatar = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
-      throw new ErrorResponse("Route params must parse Int", 400)
+      throw new ErrorResponse("Route params must parse Int", 400);
     }
     const avatarImage = req.body.image;
     await models.User.update(
