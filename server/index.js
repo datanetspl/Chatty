@@ -70,7 +70,7 @@ async function init() {
   );
   const io = socket(server, {
     cors: {
-      origin: "http://localhost:3000",
+      origin: "http://localhost:3001",
       credentials: true,
     },
   });
@@ -82,11 +82,18 @@ async function init() {
       onlineUsers.set(userId, socket.id);
     });
 
+    socket.on('join-Conv', async ({ convId, userId }) => {
+      socket.join(convId);
+      console.log(`User ${userId} has join room ${convId}`);
+    });
+
+    socket.on('leave-conv', (convId) => {
+      socket.leave(convId);
+      console.log(`User ${userId} has leave room ${convId}`);
+    });
+
     socket.on("send-msg", (data) => {
-      const sendUserSocket = onlineUsers.get(data.to);
-      if (sendUserSocket) {
-        socket.to(sendUserSocket).emit("msg-recieve", data.msg);
-      }
+      socket.to(data.to).emit("msg-recieve", data.msg);
     });
   });
 }

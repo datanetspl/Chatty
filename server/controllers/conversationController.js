@@ -4,11 +4,11 @@ const models = db.models;
 const Op = db.Sequelize.Op;
 
 module.exports.singleConversation = async (req, res, next) => {
-  const { userId2 } = req.body;
+  const { from, to } = req.body;
   try {
     const users = await models.User.findAll({
       where: {
-        id: [parseInt(req.headers.userid), userId2]
+        id: [from, to]
       },
     });
     if (users.length < 2) {
@@ -21,11 +21,11 @@ module.exports.singleConversation = async (req, res, next) => {
       include: [
         {
           model: models.User,
-          where: { id: req.headers.userId }
+          where: { id: from }
         },
         {
           model: models.User,
-          where: { id: userId2 }
+          where: { id: to }
         }
       ],
     });

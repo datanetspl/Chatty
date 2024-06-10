@@ -4,8 +4,8 @@ const models = db.models;
 const Op = db.Sequelize.Op;
 module.exports.getMessages = async (req, res, next) => {
   try {
-    const { convId } = req.body;
-    const userId = req.headers.userid;
+    const { from, convId } = req.body;
+    const userId = from
     const userConversation = await models.UserConversation.findOne({
       where: {
         userId,
@@ -37,12 +37,12 @@ module.exports.getMessages = async (req, res, next) => {
 
 module.exports.addMessage = async (req, res, next) => {
   try {
-    const { convId, message } = req.body;
-    const userId = req.headers.userid;
+    const { from, to, message } = req.body;
+    const userId = from
     const userConversation = await models.UserConversation.findOne({
       where: {
         userId,
-        convId
+        convId: to
       }
     });
     if (!userConversation) {
@@ -51,10 +51,10 @@ module.exports.addMessage = async (req, res, next) => {
     const data = await models.Message.create({
       text: message,
       senderId: userId,
-      convId,
+      convId: to,
     });
 
-    const conversation = await models.Conversation.findByPk(convId, {
+    const conversation = await models.Conversation.findByPk(to, {
       include: models.User,
       as: "Users"
     });
@@ -65,7 +65,7 @@ module.exports.addMessage = async (req, res, next) => {
 
     await models.UserConversation.update({ isRead: false }, {
       where: {
-        convId,
+        convId: to,
         userId: {
           [Op.in]: usersIdInConv
         }
