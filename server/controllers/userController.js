@@ -53,11 +53,7 @@ module.exports.getAllUsers = async (req, res, next) => {
   console.log(req.params);
   try {
     const users = await models.User.findAll({
-<<<<<<< HEAD
       where: { id: { [Op.ne]: req.params.id } },
-=======
-      where: { id: { [Op.ne]: parseInt(req.params.id) } },
->>>>>>> master
       attributes: ["id", "email", "username", "avatarImage"]
     });
     return res.json(users);
@@ -70,14 +66,8 @@ module.exports.setAvatar = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
-<<<<<<< HEAD
       throw new ErrorResponse("Route params must parse Int", 400);
     }
-=======
-      throw new Error("Route params must parse Int")
-    }
-    console.log(req.params);
->>>>>>> master
     const avatarImage = req.body.image;
     console.log(avatarImage);
     await models.User.update(

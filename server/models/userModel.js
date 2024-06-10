@@ -60,7 +60,6 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   User.associate = function (models) {
-<<<<<<< HEAD
     User.belongsToMany(models.Conversation, {
       through: models.UserConversation,
       foreignKey: "userId",
@@ -70,17 +69,6 @@ module.exports = (sequelize, DataTypes) => {
       as: "sendedMessages"
     });
   };
-=======
-    User.hasMany(models.Message, {
-      foreignKey: "senderId",
-      as: "sendedMessages"
-    }),
-      User.hasMany(models.Message, {
-        foreignKey: "receiverId",
-        as: "receivedMessages"
-      })
-  }
->>>>>>> master
 
   return User;
 };
