@@ -50,21 +50,17 @@ module.exports.singleConversation = async (req, res, next) => {
 };
 
 module.exports.groupConversation = async (req, res, next) => {
-  let { participants } = req.body;
+  const { userId, name, participants } = req.body;
   try {
     participants = Array.from(new Set(participants));
-    if (participants.length < 2) {
-      throw new ErrorResponse("Group chat need more than 3 people", 400);
-    }
-    const userId = req.headers.userid
     const users = await models.User.findAll({
       where: {
         id: [userId, ...participants]
       },
-    })
+    });
 
     if (users.length < participants.length + 1) {
-      throw new ErrorResponse("User not found", 400)
+      throw new ErrorResponse("User not found", 400);
     }
     const conversation = await db.sequelize.transaction(async (t) => {
       const participantsName = await Promise.all(participants.map(async (id) => {
@@ -72,7 +68,11 @@ module.exports.groupConversation = async (req, res, next) => {
         return userData.username;
       }));
 
-      const conversation = await models.Conversation.create({ type: "group", name: participantsName.join(", ") }, { transaction: t });
+      const conversation = await models.Conversation.create({ 
+                                    type: "group", 
+                                    name: name || participantsName.join(", ") 
+                                  },
+                                  { transaction: t });
 
       await conversation.addUsers(users, { transaction: t });
 
@@ -85,7 +85,45 @@ module.exports.groupConversation = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-}
+};
 
+module.exports.addUserToConversation = async (req, res, next) => {
+  let { userId, convId, participants } = req.body;
+  try {
+    participants = Array.from(new Set(participants));
+
+    const users = await models.User.findAll({
+      where: {
+        id: [...participants]
+      },
+    });
+
+    if (users.length < participants.length) {
+      throw new ErrorResponse("User not found", 400);
+    }
+    const checkUserInConv = await models.UserConversation.findOne({
+      where: {
+        userId,
+        convId
+      }
+    });
+    if (!checkUserInConv) {
+      throw new ErrorResponse("You are not in conversation");
+    }
+    const conversation = await db.sequelize.transaction(async (t) => {
+      const conversation = await models.Conversation.findByPk(convId);
+      await conversation.addUsers(users, { transaction: t });
+      return conversation;
+    });
+
+    return res.json({
+      convId: conversation.id
+    });
+
+  } catch (err) {
+    next(err);
+  }
+
+}
 
 

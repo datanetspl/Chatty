@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Logo from "../assets/logo.svg";
+import { BiConversation } from "react-icons/bi";
 
-export default function Contacts({ contacts, changeChat }) {
+export default function Contacts({ contacts, changeChat, handleOpenCreateConversation }) {
   const [currentUserName, setCurrentUserName] = useState(undefined);
   const [currentUserImage, setCurrentUserImage] = useState(undefined);
   const [currentSelected, setCurrentSelected] = useState(undefined);
@@ -47,6 +48,11 @@ export default function Contacts({ contacts, changeChat }) {
               );
             })}
           </div>
+          <div className="create-conversation">
+            <Button onClick={handleOpenCreateConversation}>
+              <BiConversation />
+            </Button>
+          </div>
           <div className="current-user">
             <div className="avatar">
               <img
@@ -63,11 +69,27 @@ export default function Contacts({ contacts, changeChat }) {
     </>
   );
 }
+
+const Button = styled.button`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  border: none;
+  cursor: pointer;
+  svg {
+    font-size: 1.3rem;
+    color: #ebe7ff;
+  }
+`;
+
 const Container = styled.div`
   display: grid;
-  grid-template-rows: 10% 75% 15%;
+  grid-template-rows: 10% 65% 10% 15%;
   overflow: hidden;
-  background-color: #ffffff;
+  background-color: rgb(41 36 36);
   .brand {
     display: flex;
     align-items: center;
@@ -118,10 +140,15 @@ const Container = styled.div`
       }
     }
     .selected {
-      background-color: #ffffff;
+      background-color: rgba(255, 255, 255, 0.5);
+    }
     }
   }
-
+  .create-conversation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
   .current-user {
     background-color: #0d0d30;
     display: flex;

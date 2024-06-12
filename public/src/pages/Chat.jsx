@@ -7,6 +7,7 @@ import { allUsersRoute, host } from "../utils/APIRoutes";
 import ChatContainer from "../components/ChatContainer";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
+import CreateConversationModal from "../components/CreateConversationModal";
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function Chat() {
   const [contacts, setContacts] = useState([]);
   const [currentChat, setCurrentChat] = useState(undefined);
   const [currentUser, setCurrentUser] = useState(undefined);
+  const [openCreateConversation, setOpenCreateConversation] = useState(false);
   useEffect(async () => {
     if (!localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)) {
       navigate("/login");
@@ -45,16 +47,35 @@ export default function Chat() {
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
   };
+  const handleOpenCreateConversation = () => {
+    setOpenCreateConversation(true)
+  }
+  const handleCloseCreateConversation = () => {
+    setOpenCreateConversation(false)
+  }
+  const handleSubmitCreateConversation = () => {
+    console.log("hehe")
+  }
   return (
     <>
       <Container>
         <div className="container">
-          <Contacts contacts={contacts} changeChat={handleChatChange} />
+          <Contacts 
+            contacts={contacts} 
+            changeChat={handleChatChange} 
+            handleOpenCreateConversation={handleOpenCreateConversation}
+          />
           {currentChat === undefined ? (
             <Welcome />
           ) : (
             <ChatContainer currentChat={currentChat} socket={socket} />
           )}
+        <CreateConversationModal 
+          isOpen={openCreateConversation} 
+          onClose={handleCloseCreateConversation}
+          onSubmit={handleSubmitCreateConversation}
+        />
+
         </div>
       </Container>
     </>

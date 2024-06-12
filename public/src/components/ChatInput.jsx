@@ -109,7 +109,7 @@ const Container = styled.div`
       width: 90%;
       height: 60%;
       background-color: transparent;
-      color: AliceBlue;
+      color: black;
       border: none;
       padding-left: 1rem;
       font-size: 1.2rem;

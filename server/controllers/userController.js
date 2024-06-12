@@ -50,10 +50,17 @@ module.exports.register = async (req, res, next) => {
 };
 
 module.exports.getAllUsers = async (req, res, next) => {
-  console.log(req.params);
+  const { username } = req.query;
   try {
+    let query = {
+      id: { [Op.ne]: req.params.id }
+    };
+    if (username) {
+      query.username = username;
+    }
+    console.log(query)
     const users = await models.User.findAll({
-      where: { id: { [Op.ne]: req.params.id } },
+      where: { ...query },
       attributes: ["id", "email", "username", "avatarImage"]
     });
     return res.json(users);
