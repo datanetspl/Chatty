@@ -49,6 +49,22 @@ module.exports.singleConversation = async (req, res, next) => {
   }
 };
 
+module.exports.getAllGroup = async (req, res, next) => {
+  const { userId } = req.body;
+  try {
+    const user = await models.User.findByPk(userId);
+    return res.json({
+      convs: await user.getConversations({
+        where: {
+          type: 'group'
+        }
+      })
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports.getGroup = async (req, res, next) => {
   const { userId, convId } = req.body;
   try {
@@ -63,22 +79,26 @@ module.exports.getGroup = async (req, res, next) => {
     }
     const convData = await models.Conversation.findOne({
       where: {
+        id: convId,
         type: "group",
       }
     });
+    if (!convData) {
+      throw new ErrorResponse('Group not exist', 400)
+    }
     let users = (await convData.getUsers()).map((user) => {
       const { password, UserConversation, ...data } = user.toJSON();
       return data;
-    })
+    });
     return res.json({
       convData: convData.toJSON(),
       users,
-    })
+    });
   } catch (err) {
     next(err);
   }
 
-}
+};
 
 module.exports.groupConversation = async (req, res, next) => {
   let { userId, name, participants } = req.body;
@@ -99,11 +119,11 @@ module.exports.groupConversation = async (req, res, next) => {
         return userData.username;
       }));
 
-      const conversation = await models.Conversation.create({ 
-                                    type: "group", 
-                                    name: name || participantsName.join(", ") 
-                                  },
-                                  { transaction: t });
+      const conversation = await models.Conversation.create({
+        type: "group",
+        name: name || participantsName.join(", ")
+      },
+        { transaction: t });
 
       await conversation.addUsers(users, { transaction: t });
 
