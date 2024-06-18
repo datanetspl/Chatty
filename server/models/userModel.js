@@ -1,3 +1,5 @@
+const bcrypt = require("bcrypt");
+
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
     "User",
@@ -58,15 +60,15 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   User.associate = function (models) {
+    User.belongsToMany(models.Conversation, {
+      through: models.UserConversation,
+      foreignKey: "userId",
+    });
     User.hasMany(models.Message, {
       foreignKey: "senderId",
       as: "sendedMessages"
-    }),
-      User.hasMany(models.Message, {
-        foreignKey: "receiverId",
-        as: "receivedMessages"
-      })
-  }
+    });
+  };
 
-  return User
+  return User;
 };

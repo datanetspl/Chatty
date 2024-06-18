@@ -2,10 +2,11 @@ const express = require("express");
 const cors = require("cors");
 const authRoutes = require("./routes/auth");
 const messageRoutes = require("./routes/messages");
+const conversationRoutes = require("./routes/conversation");
 const app = express();
 const socket = require("socket.io");
 const db = require("./models");
-const config = require("./config/app.config")
+const config = require("./config/app.config");
 async function assertDatabaseConnectionOk() {
   console.log(`Checking database connection...`);
   try {
@@ -24,7 +25,7 @@ async function init() {
   console.log(`Starting Express server...`);
 
   // init table
-  db.sequelize.sync()
+  db.sequelize.sync({ force: false })
     .then(() => {
       console.log("Synced db.");
     })
@@ -46,6 +47,23 @@ async function init() {
 
   app.use("/api/auth", authRoutes);
   app.use("/api/messages", messageRoutes);
+  app.use("/api/conversation", conversationRoutes);
+
+  // handling error
+  app.use((_req, _res, next) => {
+    const error = new Error('not found');
+    error['status'] = 404;
+    next(error);
+  });
+
+  app.use((error, _req, res, _next) => {
+    const statusCode = Number(error.status) || 500;
+    return res.status(statusCode).json({
+      status: 'error',
+      code: statusCode,
+      message: error.message || 'Internal server error',
+    });
+  });
 
   // handling error
   app.use((req, res, next) => {
@@ -80,11 +98,18 @@ async function init() {
       onlineUsers.set(userId, socket.id);
     });
 
+    socket.on('join-Conv', async ({ convId, userId }) => {
+      socket.join(convId);
+      console.log(`User ${userId} has join room ${convId}`);
+    });
+
+    socket.on('leave-conv', (convId) => {
+      socket.leave(convId);
+      console.log(`User ${userId} has leave room ${convId}`);
+    });
+
     socket.on("send-msg", (data) => {
-      const sendUserSocket = onlineUsers.get(data.to);
-      if (sendUserSocket) {
-        socket.to(sendUserSocket).emit("msg-recieve", data.msg);
-      }
+      socket.to(data.to).emit("msg-recieve", data.msg);
     });
   });
 }

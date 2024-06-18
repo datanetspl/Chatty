@@ -4,22 +4,33 @@ import ChatInput from "./ChatInput";
 import Logout from "./Logout";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import { sendMessageRoute, recieveMessageRoute } from "../utils/APIRoutes";
+import {
+  sendMessageRoute,
+  recieveMessageRoute,
+  getSingleConversation
+} from "../utils/APIRoutes";
 
-export default function ChatContainer({ currentChat, socket }) {
+export default function SingleChatContainer({ currentChat, socket }) {
   const [messages, setMessages] = useState([]);
   const scrollRef = useRef();
-  const [arrivalMessage, setArrivalMessage] = useState(null);
+  const [convId, setConvId] = useState(undefined);
 
   useEffect(async () => {
     const data = await JSON.parse(
       localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
     );
-    const response = await axios.post(recieveMessageRoute, {
+    const conversationData = await axios.post(getSingleConversation, {
       from: data.id,
       to: currentChat.id,
     });
-    setMessages(response.data);
+    const id = conversationData.data.convId;
+    socket.current.emit("join-Conv", { convId: id, userId: data.id });
+    setConvId(id);
+    const messages = await axios.post(recieveMessageRoute, {
+      from: data.id,
+      convId: id,
+    });
+    setMessages(messages.data);
   }, [currentChat]);
 
   useEffect(() => {
@@ -37,33 +48,30 @@ export default function ChatContainer({ currentChat, socket }) {
     const data = await JSON.parse(
       localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
     );
-    socket.current.emit("send-msg", {
-      to: currentChat.id,
-      from: data.id,
-      msg,
-    });
-    await axios.post(sendMessageRoute, {
-      from: data.id,
-      to: currentChat.id,
-      message: msg,
-    });
-
-    const msgs = [...messages];
-    msgs.push({ fromSelf: true, message: msg });
-    setMessages(msgs);
+    if (convId) {
+      socket.current.emit("send-msg", {
+        to: convId,
+        from: data.id,
+        msg,
+      });
+      await axios.post(sendMessageRoute, {
+        from: data.id,
+        to: convId,
+        message: msg,
+      });
+      const msgs = [...messages];
+      msgs.push({ fromSelf: true, message: msg });
+      setMessages(msgs);
+    }
   };
 
   useEffect(() => {
     if (socket.current) {
       socket.current.on("msg-recieve", (msg) => {
-        setArrivalMessage({ fromSelf: false, message: msg });
+        setMessages((prev) => [...prev, { fromSelf: false, message: msg }]);
       });
     }
   }, []);
-
-  useEffect(() => {
-    arrivalMessage && setMessages((prev) => [...prev, arrivalMessage]);
-  }, [arrivalMessage]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });

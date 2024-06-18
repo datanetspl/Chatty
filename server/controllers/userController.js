@@ -3,6 +3,7 @@ const models = db.models;
 const Op = db.Sequelize.Op;
 const bcrypt = require("bcrypt");
 const { use } = require("../routes/auth");
+const ErrorResponse = require("../core/errorResponse");
 
 module.exports.login = async (req, res, next) => {
   try {
@@ -13,11 +14,14 @@ module.exports.login = async (req, res, next) => {
     if (!user)
       return res.json({ msg: "Incorrect Username or Password", status: false });
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid)
+    if (!isPasswordValid) {
       //return res.json({ msg: "Incorrect Username or Password", status: false });
       return res.json({ msg: "Incorrect Username or Password", status: true });
-    delete user.password;
-    return res.json({ status: true, user: user.id });
+    }
+
+    const { password: userPassword, ...userWithoutPassword } = user.toJSON();
+    
+    return res.json({ status: true, user: userWithoutPassword });
   } catch (ex) {
     next(ex);
   }
@@ -38,18 +42,25 @@ module.exports.register = async (req, res, next) => {
       username,
       password: hashedPassword,
     });
-    delete user.password;
-    return res.json({ status: true, user });
+    const { password: userPassword, ...userWithoutPassword } = user.toJSON();
+    return res.json({ status: true, user: userWithoutPassword });
   } catch (ex) {
     next(ex);
   }
 };
 
 module.exports.getAllUsers = async (req, res, next) => {
-  console.log(req.params);
+  const { username } = req.query;
   try {
+    let query = {
+      id: { [Op.ne]: req.params.id }
+    };
+    if (username) {
+      query.username = username;
+    }
+    console.log(query)
     const users = await models.User.findAll({
-      where: { id: { [Op.ne]: parseInt(req.params.id) } },
+      where: { ...query },
       attributes: ["id", "email", "username", "avatarImage"]
     });
     return res.json(users);
@@ -62,9 +73,8 @@ module.exports.setAvatar = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
-      throw new Error("Route params must parse Int")
+      throw new ErrorResponse("Route params must parse Int", 400);
     }
-    console.log(req.params);
     const avatarImage = req.body.image;
     console.log(avatarImage);
     await models.User.update(

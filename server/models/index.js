@@ -17,6 +17,8 @@ const db = {
 
 const modelDefiners = [
 	require("./userModel"),
+  require("./conversationModel"),
+  require("./userConversationModel"),
 	require("./messageModel"),
 	// Add more models here...
 	// require('./models/item'),
