@@ -1,5 +1,122 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import UserCard from './UserCard';
+import { debounce, isEmpty } from 'lodash';
+import axios from 'axios';
+import { allUsersRoute, createGroupConversation } from "../utils/APIRoutes";
+import { useNavigate } from "react-router-dom";
+import SelectedUser from './SelectedUser';
+
+const CreateConversationModal = ({ isOpen, onClose, onSetConv, onSetType }) => {
+  const [userQuery, setUserQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(undefined);
+  const navigate = useNavigate();
+
+
+
+  React.useEffect(async () => {
+    if (!localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)) {
+      navigate("/login");
+    } else {
+      setCurrentUser(
+        await JSON.parse(
+          localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
+        )
+      );
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (event.target.id === 'modalBackground') {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      window.removeEventListener('click', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      const { data } = await axios.get(`${allUsersRoute}/${currentUser.id}?username=${userQuery}`);
+      const filteredResults = data.filter(
+        (user) => !selectedUsers.some((selectedUser) => selectedUser.username === user.username)
+      );
+      setSearchResults(filteredResults);
+    };
+    if (userQuery) {
+      fetchUsers();
+    } else {
+      setSearchResults([]);
+    }
+  }, [userQuery]);
+
+  if (!isOpen) return null;
+
+  const updateQuery = (e) => setUserQuery(e?.target?.value);
+
+  const debounceOnchange = debounce(updateQuery, 1000);
+
+  const handleAddUser = (user) => {
+    if (!selectedUsers.some((u) => u.username === user.username)) {
+      setSelectedUsers([...selectedUsers, user]);
+      setSearchResults(searchResults.filter(u => u.username !== user.username))
+    }
+  };
+
+  const handleRemoveUser = (user) => {
+    setSelectedUsers(selectedUsers.filter((u) => u.username !== user.username));
+  };
+
+  const handleSubmitCreateConversation = async () => {
+    if (!isEmpty(selectedUsers)) {
+      const data = await axios.post(`${createGroupConversation}`, {
+        userId: currentUser.id,
+        participants: selectedUsers.map(u => u.id),
+      })
+      onSetConv(data.data.convId);
+      onSetType("group");
+      onClose();
+      setUserQuery('');
+      setSearchResults([]);
+      setSelectedUsers([]);
+    }
+  }
+
+  return (
+    <ModalBackground id="modalBackground">
+      <ModalContainer>
+        <Header>
+          <Title>Create Group Chat</Title>
+          <CloseButton onClick={onClose}>&times;</CloseButton>
+        </Header>
+        <SearchContainer>
+          <Label htmlFor="userName">User Name</Label>
+          <Input
+            type="text"
+            onChange={debounceOnchange}
+            required
+          />
+          <SelectedUsersContainer>
+            {selectedUsers.map((user, index) => (
+              <SelectedUser key={index} user={user} onRemove={handleRemoveUser} />
+            ))}
+          </SelectedUsersContainer>
+          <SubmitButton type="submit" onClick={handleSubmitCreateConversation}>Create Group</SubmitButton>
+          {searchResults.map((user) => <UserCard user={user} onAdd={handleAddUser}/>)}
+        </SearchContainer>
+      </ModalContainer>
+    </ModalBackground>
+  );
+};
 
 const ModalBackground = styled.div`
   position: fixed;
@@ -39,7 +156,7 @@ const CloseButton = styled.button`
   cursor: pointer;
 `;
 
-const Form = styled.form`
+const SearchContainer = styled.div`
   display: flex;
   flex-direction: column;
 `;
@@ -63,70 +180,12 @@ const SubmitButton = styled.button`
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
+  margin-bottom: 15px;
 `;
 
-const CreateConversationModal = ({ isOpen, onClose, onSubmit }) => {
-  const [groupName, setGroupName] = useState('');
-  const [userName, setUserName] = useState('');
-
-  React.useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (event.target.id === 'modalBackground') {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      window.addEventListener('click', handleClickOutside);
-    }
-
-    return () => {
-      window.removeEventListener('click', handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (groupName && userName) {
-      onSubmit({ groupName, userName });
-      setGroupName('');
-      setUserName('');
-    }
-  };
-
-  return (
-    <ModalBackground id="modalBackground">
-      <ModalContainer>
-        <Header>
-          <Title>Create Group Chat</Title>
-          <CloseButton onClick={onClose}>&times;</CloseButton>
-        </Header>
-        <Form onSubmit={handleSubmit}>
-          <Label htmlFor="groupName">Group Name</Label>
-          <Input
-            type="text"
-            id="groupName"
-            name="groupName"
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
-            required
-          />
-          <Label htmlFor="userName">User Name</Label>
-          <Input
-            type="text"
-            id="userName"
-            name="userName"
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            required
-          />
-          <SubmitButton type="submit">Create Group</SubmitButton>
-        </Form>
-      </ModalContainer>
-    </ModalBackground>
-  );
-};
+const SelectedUsersContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+`;
 
 export default CreateConversationModal;

@@ -49,8 +49,39 @@ module.exports.singleConversation = async (req, res, next) => {
   }
 };
 
+module.exports.getGroup = async (req, res, next) => {
+  const { userId, convId } = req.body;
+  try {
+    const userConversation = await models.UserConversation.findOne({
+      where: {
+        userId,
+        convId
+      }
+    });
+    if (!userConversation) {
+      throw new ErrorResponse("User hasn't been in conversation", 400);
+    }
+    const convData = await models.Conversation.findOne({
+      where: {
+        type: "group",
+      }
+    });
+    let users = (await convData.getUsers()).map((user) => {
+      const { password, UserConversation, ...data } = user.toJSON();
+      return data;
+    })
+    return res.json({
+      convData: convData.toJSON(),
+      users,
+    })
+  } catch (err) {
+    next(err);
+  }
+
+}
+
 module.exports.groupConversation = async (req, res, next) => {
-  const { userId, name, participants } = req.body;
+  let { userId, name, participants } = req.body;
   try {
     participants = Array.from(new Set(participants));
     const users = await models.User.findAll({

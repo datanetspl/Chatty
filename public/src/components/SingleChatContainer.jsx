@@ -4,12 +4,16 @@ import ChatInput from "./ChatInput";
 import Logout from "./Logout";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import { sendMessageRoute, recieveMessageRoute, getSingleConversation } from "../utils/APIRoutes";
+import {
+  sendMessageRoute,
+  recieveMessageRoute,
+  getSingleConversation
+} from "../utils/APIRoutes";
 
-export default function ChatContainer({ currentChat, socket }) {
+export default function SingleChatContainer({ currentChat, socket }) {
   const [messages, setMessages] = useState([]);
   const scrollRef = useRef();
-  const [convId, setConvId] = useState(undefined)
+  const [convId, setConvId] = useState(undefined);
 
   useEffect(async () => {
     const data = await JSON.parse(
@@ -18,9 +22,9 @@ export default function ChatContainer({ currentChat, socket }) {
     const conversationData = await axios.post(getSingleConversation, {
       from: data.id,
       to: currentChat.id,
-    })
+    });
     const id = conversationData.data.convId;
-    socket.current.emit("join-Conv", { convId: id, userId: data.id});
+    socket.current.emit("join-Conv", { convId: id, userId: data.id });
     setConvId(id);
     const messages = await axios.post(recieveMessageRoute, {
       from: data.id,

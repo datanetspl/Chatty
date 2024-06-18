@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import styled from "styled-components";
 import { allUsersRoute, host } from "../utils/APIRoutes";
-import ChatContainer from "../components/ChatContainer";
+import SingleChatContainer from "../components/SingleChatContainer";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
 import CreateConversationModal from "../components/CreateConversationModal";
+import GroupChatContainer from "../components/GroupChatContainer";
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ export default function Chat() {
   const [currentChat, setCurrentChat] = useState(undefined);
   const [currentUser, setCurrentUser] = useState(undefined);
   const [openCreateConversation, setOpenCreateConversation] = useState(false);
+  const [convId, setConvId] = useState(undefined);
+  const [type, setType] = useState(undefined);
   useEffect(async () => {
     if (!localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)) {
       navigate("/login");
@@ -48,34 +51,41 @@ export default function Chat() {
     setCurrentChat(chat);
   };
   const handleOpenCreateConversation = () => {
-    setOpenCreateConversation(true)
-  }
+    setOpenCreateConversation(true);
+  };
   const handleCloseCreateConversation = () => {
-    setOpenCreateConversation(false)
-  }
-  const handleSubmitCreateConversation = () => {
-    console.log("hehe")
-  }
+    setOpenCreateConversation(false);
+  };
+  const handleSetConversation = (data) => {
+    setConvId(data);
+  };
+  const handleSetType = (type) => {
+    setType(type);
+  };
   return (
     <>
       <Container>
         <div className="container">
-          <Contacts 
-            contacts={contacts} 
-            changeChat={handleChatChange} 
+          <Contacts
+            contacts={contacts}
+            changeChat={handleChatChange}
             handleOpenCreateConversation={handleOpenCreateConversation}
+            onSetType={handleSetType}
+            onSetConv={handleSetConversation}
           />
-          {currentChat === undefined ? (
+          {currentChat === undefined && convId === undefined ? (
             <Welcome />
           ) : (
-            <ChatContainer currentChat={currentChat} socket={socket} />
+            type === 'single' ?
+              (<SingleChatContainer currentChat={currentChat} socket={socket} />) :
+              (<GroupChatContainer convId={convId} socket={socket} />)
           )}
-        <CreateConversationModal 
-          isOpen={openCreateConversation} 
-          onClose={handleCloseCreateConversation}
-          onSubmit={handleSubmitCreateConversation}
-        />
-
+          <CreateConversationModal
+            isOpen={openCreateConversation}
+            onClose={handleCloseCreateConversation}
+            onSetConv={handleSetConversation}
+            onSetType={handleSetType}
+          />
         </div>
       </Container>
     </>
